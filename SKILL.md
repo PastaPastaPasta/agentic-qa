@@ -1,6 +1,6 @@
 ---
 name: agentic-qa
-description: Run a large, evidence-backed QA pass on an app or branch with parallel subagents that drive real devices, emulators, simulators or browsers, then turn the results into a segmented report (executive summary, user-story matrix with proof, severity-sorted defect ledger, per-stream reports, evidence gallery) published to GitHub Pages, and optionally a fix loop where each defect becomes its own PR with before/after QA. Use when the user asks for "full QA", "robust QA", a release/ship review of a big changeset, "test all user stories", QA with screenshots/videos as proof, or wants to re-run or extend a previous agentic QA pass.
+description: Run a parallel, evidence-backed QA pass on an app or branch (devices, simulators, emulators, or browsers) and publish a segmented report with screenshots/videos and optional defect-fix PRs. Use when asked for 'full QA', 'robust QA', a release QA review, 'test all user stories', or to re-run/extend an agentic QA pass.
 ---
 
 # Agentic QA
