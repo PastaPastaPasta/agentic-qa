@@ -24,8 +24,8 @@ tooling) to the project in front of you.
 
 1. **An orchestrator and many subagents, not one agent.** The main session plans, builds the
    harness, writes briefs, dispatches streams, merges results and publishes. It does not do the
-   testing itself. Each stream is one subagent that owns one device and one theme. Use Opus
-   subagents for testing and validation. Use a stronger model only for involved code fixes.
+   testing itself. Each stream is one subagent that owns one device and one theme. Pick subagent
+   models and efforts using `model-choice` and `limits`.
 2. **Scope comes from the diff.** Diff the branch against the last release. Group the changes by
    area and rank the risk (core / every screen that reads the changed seam / regressions in
    untouched flows). Also test beyond the diff: regression sweep, localisation, accessibility,
@@ -64,13 +64,13 @@ tooling) to the project in front of you.
   matters.
 - Write `AGENT-BRIEF.md` (template in references). Every stream reads it first.
 
-## Phase 2 — Run the streams (`/goal`)
+## Phase 2 — Run the streams
 
 - Launch the streams in parallel. Each gets one device serial, an evidence dir
   `evidence/<stream>/`, its tier/test IDs and a time budget. Group work so long waits (syncs,
   confirmations) overlap with shorter tests.
-- Use `/goal <condition>` so a Stop hook keeps the orchestrator working until the report exists.
-  Watch for `evidence/*/REPORT.md` appearing with Monitor, not sleep loops.
+- Keep the orchestrator active until every stream finishes (using your harness's goal/async
+  completion notifications rather than `sleep` polling loops).
 - Keep a running `DEFECT-LEDGER.md` while reports arrive. Use one ID space (D-001…), dedupe
   across streams (list every stream that saw a defect), record status (candidate / confirmed /
   pre-existing / resolved-not-a-bug), and keep ENV-n rows separate. When the orchestrator wants
@@ -116,12 +116,12 @@ Output shape (keep it; the value is in the segmentation):
 - **Reproduce statically-found items.** Brief: `SR-REPRO-BRIEF.md`. Each stream takes a few SR
   items, proves or disproves them on a device, and updates the ledger. Fault injection through
   the debug bridge is allowed. Changing the app is not.
-- **Fix.** One subagent, worktree and branch per defect (or per tightly coupled group). Use
-  Opus for straightforward fixes and the strongest model for involved ones. Brief:
+- **Fix.** One subagent, worktree and branch per defect (or per tightly coupled group), sized
+  per `model-choice` and `limits`. Brief:
   `FIX-BRIEF.md` requires a minimal root-cause fix, a unit test that fails before and passes
   after, a signed build, and a **QA validation recipe** (steps that fail before and must pass
   after, plus the log lines that prove it). No push, no PR.
-- **Validate.** A different Opus subagent (brief: `QA-FIX-BRIEF.md`) runs BEFORE on the base
+- **Validate.** A different subagent (brief: `QA-FIX-BRIEF.md`) runs BEFORE on the base
   build and AFTER on the candidate with identical steps, then regression checks and at least two
   adversarial variations. The verdict is FIXED / PARTIALLY FIXED / NOT FIXED / FIXED BUT
   REGRESSION, and the report ends with the 3–6 best artefacts for the PR.
@@ -139,12 +139,13 @@ Output shape (keep it; the value is in the segmentation):
   report in their final message as a fallback, then save it verbatim.
 - Stream IDs collide when streams file defects in parallel. Reserve ID ranges per stream or
   renumber at merge time and record the mapping.
-- Shared rate limits (faucets, APIs) need a per-wallet "request once" rule. Headless faucet
-  clients may get Cloudflare-banned, so use a real browser tool.
+- Shared rate limits (faucets, APIs) need a per-wallet "request once" rule. Use the `dash-faucet`
+  skill's helper (`request_core_faucet.py`, API key or built-in PoW) for testnet DASH rather than
+  scraping web faucets.
 - Android specifics: `adb root` kills running logcat pipes. Emulators clamp RAM. Shell/root
   broadcasts bypass not-exported receivers (false positives, so `adb unroot` first). To stall an
   app's network without flipping connectivity, use `iptables -m owner --uid-owner <uid> -j DROP`.
   Put greps inside `adb shell "…"` to avoid broken pipes. Tap PIN pads by resource-id with ≥1.2 s
   gaps.
-- Rate limits on the strongest model can kill fix agents midway. Resume them with SendMessage
-  (context intact) instead of relaunching.
+- Rate limits can interrupt fix agents midway. Message/resume the existing subagent with its
+  context intact instead of relaunching from scratch.
